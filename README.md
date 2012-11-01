@@ -20,7 +20,7 @@ I still have to check that rubygems stuff, maybe i'll have to rename the gem to 
 
 **Add to &lt;environment>.rb**
 
-Basically you still have to write the conditions, when the request should be rejected on your own. This example would deny access to all clients with IPs other than 127.0.0.1:
+Basically you still have to write the conditions for rejection on your own. The rest is handled by this gem. This example would deny access to all clients with IPs other than 127.0.0.1:
  
     config.middleware.use "Rack::Reject::Rejector" do |request|
       request.ip != "127.0.0.1"
@@ -49,10 +49,11 @@ Examples
 	
 Use only on april-fools day. Don't forget to create iis.html.
 
-**Limit the number of incoming requests per ip**
+**Limit the number of incoming requests per ip (rails)**
 
-    config.middleware.use "Rack::Reject::Rejector", :code => 403 do |request, opts|
+    config.middleware.insert_before 'Rack::Lock',"Rack::Reject::Rejector", :code => 403 do |request, opts|
       allowed_requests_per_second = 0.5
+      max_lockout_seconds = 100
       threshold = 20
       now = Time.now
       
@@ -61,6 +62,8 @@ Use only on april-fools day. Don't forget to create iis.html.
       activity = client_info[1]
       
       activity = [activity - (now - last_visit) * allowed_requests_per_second, 0.0].max + 1.0
+      activity = [activity, (max_lockout_seconds * allowed_requests_per_second) + threshold].min
+      
       
       opts[:retry_after] = ((activity - threshold) / allowed_requests_per_second).ceil.to_s
       opts[:msg] = "Your last request was only #{(now - last_visit)} seconds ago. \nCome back in #{opts[:retry_after]} seconds."
@@ -71,7 +74,8 @@ Use only on april-fools day. Don't forget to create iis.html.
     end
 
 Make sure to use a fast cross-instance rails cache for this, e.g. [memcache store](http://api.rubyonrails.org/classes/ActiveSupport/Cache/MemCacheStore.html).
-Make sure to configure to configure allowed requests per second and threshold to your needs, that depends strongly on if assets are delivered through rails or through an external webserver.
+Make also sure to configure to configure allowed requests per second and threshold to your needs, that depends strongly on if assets are delivered through rails or through an external webserver.
+Also there can be lots of non-malicious ajax requests which should not be blocked.
 
 ToDo
 ----
