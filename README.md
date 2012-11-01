@@ -22,7 +22,7 @@ I still have to check that rubygems stuff, maybe i'll have to rename the gem to 
 
 Basically you still have to write the conditions for rejection on your own. The rest is handled by this gem. This example would deny access to all clients with IPs other than 127.0.0.1:
  
-    config.middleware.use "Rack::Reject::Rejector" do |request|
+    config.middleware.use "Rack::Reject::Rejector" do |request, opts|
       request.ip != "127.0.0.1"
     end
 
@@ -38,6 +38,8 @@ Parameters and defaults
     } 
 
 For the retry_after param see [the rfc](http://webee.technion.ac.il/labs/comnet/netcourse/CIE/RFC/2068/201.htm) for examples.
+
+You can set all options in the middleware command and override them on the opts-hash that is passed to your rejection-block.
 
 Examples
 --------
@@ -77,9 +79,11 @@ Make sure to use a fast cross-instance rails cache for this, e.g. [memcache stor
 Make also sure to configure to configure allowed requests per second and threshold to your needs, that depends strongly on if assets are delivered through rails or through an external webserver.
 Also there can be lots of non-malicious ajax requests which should not be blocked.
 
+With config.middleware.insert_before, the rejection code is called at the very beginning of the request handling. 
+This will lower the used resources to a minimum.
+
 ToDo
 ----
-
   - Write lots of awesome tests
 
 Acknowledgements
@@ -87,7 +91,4 @@ Acknowledgements
   - [datagraph/rack-throttle](https://github.com/datagraph/rack-throttle) was the inspiration to limit requests, although it didn't fit our needs
   - [ASCIIcasts](http://asciicasts.com/episodes/151-rack-middleware) for explaining how to write a rack module :-)
   - A strange customer whos performance test consists of a bunch of testers pressing F5 on the slowest pages (that normally wouldn't be requested more often than 5 times a minute)
-
-
-
 
