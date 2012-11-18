@@ -3,11 +3,12 @@ Reject
 
 Rack Module to reject unwanted requests.
 
-Sometimes you don't want to reject incoming requests. Use cases could be:
+Sometimes you want to reject incoming requests. Use cases could be:
 
   - block page for maintenance reasons
   - blacklist resources or clients
   - enforce usage limits (you might want to use [datagraph/rack-throttle](https://github.com/datagraph/rack-throttle) for that)
+  - block by referer or user agent
   
 Usage with Rails
 ----------------
@@ -53,7 +54,7 @@ Use only on april-fools day. Don't forget to create iis.html.
 
 **Limit the number of incoming requests per ip (rails)**
 
-    config.middleware.insert_before 'Rack::Lock',"Rack::Reject::Rejector", :code => 403 do |request, opts|
+    config.middleware.use "Rack::Reject::Rejector", :code => 403 do |request, opts|
       allowed_requests_per_second = 0.5
       max_lockout_seconds = 100
       threshold = 20
@@ -76,11 +77,9 @@ Use only on april-fools day. Don't forget to create iis.html.
     end
 
 Make sure to use a fast cross-instance rails cache for this, e.g. [memcache store](http://api.rubyonrails.org/classes/ActiveSupport/Cache/MemCacheStore.html).
-Make also sure to configure to configure allowed requests per second and threshold to your needs, that depends strongly on if assets are delivered through rails or through an external webserver.
+Make also sure to configure the number of allowed requests per second and threshold to your needs, that depends strongly on if assets are delivered through rails or through an external webserver.
 Also there can be lots of non-malicious ajax requests which should not be blocked.
 
-With config.middleware.insert_before, the rejection code is called at the very beginning of the request handling. 
-This will lower the used resources to a minimum.
 
 ToDo
 ----
